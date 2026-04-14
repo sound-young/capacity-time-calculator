@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>產能時數計算器</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --subtle: #6b7280;
+      --border: #e5e7eb;
+      --primary: #111827;
+      --primary-text: #ffffff;
+      --secondary: #f3f4f6;
+      --danger: #dc2626;
+      --danger-text: #ffffff;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+      --radius: 20px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 32px;
+    }
+
+    .desc {
+      color: var(--subtle);
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+
+    .grid {
+      display: grid;
+      gap: 20px;
+    }
+
+    .grid-top {
+      grid-template-columns: 1.2fr 0.8fr;
+      margin-bottom: 20px;
+    }
+
+    .grid-bottom {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+
+    .card-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    input {
+      width: 100%;
+      height: 48px;
+      padding: 0 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      font-size: 16px;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: #9ca3af;
+      box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.06);
+    }
+
+    .timer-box {
+      margin-top: 18px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 28px 20px;
+      text-align: center;
+      background: #fff;
+    }
+
+    .current-project {
+      color: var(--subtle);
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    .timer {
+      font-size: 56px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    .status {
+      display: inline-block;
+      margin-top: 14px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      background: var(--secondary);
+      color: var(--text);
+    }
+
+    .status.running {
+      background: #111827;
+      color: white;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 16px;
+      padding: 12px 18px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.08s ease, opacity 0.15s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+    .btn-primary {
+      background: var(--primary);
+      color: var(--primary-text);
+    }
+
+    .btn-secondary {
+      background: var(--secondary);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: var(--danger-text);
+    }
+
+    .stat-box {
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      background: white;
+      margin-bottom: 14px;
+    }
+
+    .stat-label {
+      color: var(--subtle);
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 800;
+    }
+
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .list-item {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px 16px;
+      background: white;
+    }
+
+    .list-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .list-name {
+      font-weight: 700;
+      word-break: break-word;
+    }
+
+    .list-time {
+      font-size: 22px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .list-sub {
+      margin-top: 6px;
+      color: var(--subtle);
+      font-size: 12px;
+    }
+
+    .empty {
+      color: var(--subtle);
+      font-size: 14px;
+    }
+
+    .footer-tip {
+      margin-top: 18px;
+      color: var(--subtle);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 900px) {
+      .grid-top, .grid-bottom {
+        grid-template-columns: 1fr;
+      }
+
+      .timer {
+        font-size: 42px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>產能時數計算器</h1>
+    <div class="desc">
+      輸入工作項目後開始計時，可暫停、繼續、結束並記錄。資料會自動保存在這個瀏覽器中，適合每天直接打開使用。
+    </div>
+
+    <div class="grid grid-top">
+      <div class="card">
+        <div class="card-title">目前計時</div>
+
+        <label for="projectInput">工作項目名稱</label>
+        <input id="projectInput" type="text" placeholder="例如：動畫配樂 / 剪輯 / 客戶溝通 / 行政" />
+
+        <div class="timer-box">
+          <div class="current-project" id="currentProject">尚未開始</div>
+          <div class="timer" id="timerDisplay">00:00:00</div>
+          <div class="status" id="statusBadge">待開始</div>
+        </div>
+
+        <div class="button-row">
+          <button class="btn-primary" id="startBtn">開始</button>
+          <button class="btn-secondary" id="pauseBtn">暫停</button>
+          <button class="btn-secondary" id="stopBtn">結束並記錄</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">總覽</div>
+
+        <div class="stat-box">
+          <div class="stat-label">已記錄總時數</div>
+          <div class="stat-value" id="totalLogged">00:00:00</div>
+        </div>
+
+        <div class="stat-box">
+          <div class="stat-label">已記錄筆數</div>
+          <div class="stat-value" id="totalCount">0</div>
+        </div>
+
+        <button class="btn-danger" id="clearBtn" style="width: 100%;">清除全部資料</button>
+
+        <div class="footer-tip">
+          提醒：這一版資料存於瀏覽器 localStorage。若你換瀏覽器、清除網站資料，紀錄也會一起消失。
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-bottom">
+      <div class="card">
+        <div class="card-title">各項目累積時數</div>
+        <div id="projectSummary" class="list"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">最近記錄</div>
+        <div id="sessionList" class="list"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'capacity-time-calculator-single-file-v1';
+
+    const projectInput = document.getElementById('projectInput');
+    const currentProject = document.getElementById('currentProject');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const statusBadge = document.getElementById('statusBadge');
+    const totalLogged = document.getElementById('totalLogged');
+    const totalCount = document.getElementById('totalCount');
+    const projectSummary = document.getElementById('projectSummary');
+    const sessionList = document.getElementById('sessionList');
+
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const clearBtn = document.getElementById('clearBtn');
+
+    let state = {
+      running: {
+        project: '',
+        accumulatedMs: 0,
+        startedAt: null,
+        isRunning: false,
+      },
+      sessions: [],
+    };
+
+    let timerInterval = null;
+
+    function formatMs(ms) {
+      const totalSeconds = Math.floor(ms / 1000);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      return [hours, minutes, seconds].map(n => String(n).padStart(2, '0')).join(':');
+    }
+
+    function formatDateTime(ts) {
+      return new Date(ts).toLocaleString('zh-TW', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    function getCurrentElapsedMs() {
+      if (state.running.isRunning && state.running.startedAt) {
+        return state.running.accumulatedMs + (Date.now() - state.running.startedAt);
+      }
+      return state.running.accumulatedMs;
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function loadState() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          state = {
+            running: parsed.running || state.running,
+            sessions: Array.isArray(parsed.sessions) ? parsed.sessions : [],
+          };
+          projectInput.value = state.running.project || '';
+        }
+      } catch (err) {
+        console.error('載入資料失敗', err);
+      }
+    }
+
+    function startTicking() {
+      stopTicking();
+      timerInterval = setInterval(render, 1000);
+    }
+
+    function stopTicking() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+
+    function renderSummary() {
+      if (state.sessions.length === 0) {
+        projectSummary.innerHTML = '<div class="empty">還沒有資料</div>';
+        return;
+      }
+
+      const map = {};
+      state.sessions.forEach(session => {
+        map[session.project] = (map[session.project] || 0) + session.durationMs;
+      });
+
+      const items = Object.entries(map)
+        .map(([name, durationMs]) => ({ name, durationMs }))
+        .sort((a, b) => b.durationMs - a.durationMs);
+
+      projectSummary.innerHTML = items.map(item => `
+        <div class="list-item">
+          <div class="list-top">
+            <div class="list-name">${escapeHtml(item.name)}</div>
+            <div class="list-time">${formatMs(item.durationMs)}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderSessions() {
+      if (state.sessions.length === 0) {
+        sessionList.innerHTML = '<div class="empty">還沒有記錄</div>';
+        return;
+      }
+
+      sessionList.innerHTML = state.sessions.map(session => `
+        <div class="list-item">
+          <div class="list-top">
+            <div class="list-name">${escapeHtml(session.project)}</div>
+            <div class="list-time">${formatMs(session.durationMs)}</div>
+          </div>
+          <div class="list-sub">記錄時間：${formatDateTime(session.endedAt)}</div>
+        </div>
+      `).join('');
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function renderStats() {
+      const totalMs = state.sessions.reduce((sum, session) => sum + session.durationMs, 0);
+      totalLogged.textContent = formatMs(totalMs);
+      totalCount.textContent = String(state.sessions.length);
+    }
+
+    function renderControls() {
+      const elapsedMs = getCurrentElapsedMs();
+      const hasProject = (projectInput.value.trim() || state.running.project.trim()).length > 0;
+
+      currentProject.textContent = state.running.project
+        ? `目前項目：${state.running.project}`
+        : '尚未開始';
+
+      timerDisplay.textContent = formatMs(elapsedMs);
+
+      if (state.running.isRunning) {
+        statusBadge.textContent = '計時中';
+        statusBadge.className = 'status running';
+      } else if (elapsedMs > 0) {
+        statusBadge.textContent = '已暫停';
+        statusBadge.className = 'status';
+      } else {
+        statusBadge.textContent = '待開始';
+        statusBadge.className = 'status';
+      }
+
+      startBtn.disabled = !hasProject || state.running.isRunning;
+      startBtn.textContent = elapsedMs > 0 ? '繼續' : '開始';
+      pauseBtn.disabled = !state.running.isRunning;
+      stopBtn.disabled = elapsedMs <= 0;
+    }
+
+    function render() {
+      renderControls();
+      renderStats();
+      renderSummary();
+      renderSessions();
+      saveState();
+
+      if (state.running.isRunning) {
+        startTicking();
+      } else {
+        stopTicking();
+      }
+    }
+
+    startBtn.addEventListener('click', () => {
+      const activeProject = (projectInput.value.trim() || state.running.project.trim());
+      if (!activeProject) return;
+
+      const isSameProject = state.running.project === activeProject;
+
+      state.running.project = activeProject;
+      state.running.accumulatedMs = isSameProject ? state.running.accumulatedMs : 0;
+      state.running.startedAt = Date.now();
+      state.running.isRunning = true;
+
+      projectInput.value = activeProject;
+      render();
+    });
+
+    pauseBtn.addEventListener('click', () => {
+      if (!state.running.isRunning || !state.running.startedAt) return;
+
+      state.running.accumulatedMs += Date.now() - state.running.startedAt;
+      state.running.startedAt = null;
+      state.running.isRunning = false;
+      render();
+    });
+
+    stopBtn.addEventListener('click', () => {
+      const finalDuration = getCurrentElapsedMs();
+      if (!state.running.project || finalDuration <= 0) return;
+
+      state.sessions.unshift({
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+        project: state.running.project,
+        durationMs: finalDuration,
+        endedAt: Date.now(),
+      });
+
+      state.running = {
+        project: '',
+        accumulatedMs: 0,
+        startedAt: null,
+        isRunning: false,
+      };
+
+      projectInput.value = '';
+      render();
+    });
+
+    clearBtn.addEventListener('click', () => {
+      const ok = confirm('確定要清除全部資料嗎？這個動作無法復原。');
+      if (!ok) return;
+
+      state = {
+        running: {
+          project: '',
+          accumulatedMs: 0,
+          startedAt: null,
+          isRunning: false,
+        },
+        sessions: [],
+      };
+
+      projectInput.value = '';
+      localStorage.removeItem(STORAGE_KEY);
+      render();
+    });
+
+    projectInput.addEventListener('input', () => {
+      renderControls();
+    });
+
+    loadState();
+    render();
+  </script>
+</body>
+</html>
